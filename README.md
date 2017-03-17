@@ -5,12 +5,12 @@
 
 因为PCS不提供分享接口，模拟登陆又会出现许多问题（验证码、弹窗等），所以本项目对两种api进行结合，提供一些关于分享的功能，算是对已有项目的补充。
 
-###具体功能：
+### 具体功能
 - 分享文件 `share`
 - 列出所有分享 `list_share`
 - 取消分享 `cancel_share`
 
-###用法
+### 用法
 **使用本项目需有百度云的`access_token`。如果没有，参考[`bypy`](https://github.com/houtianze/bypy)，请先安装`bypy`，在命令行输入`bypy info`并进行授权，接着在`~/.bypy/bypy.json`中找到`access_token`供api使用。**
 
 ```
