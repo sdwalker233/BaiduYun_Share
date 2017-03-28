@@ -13,34 +13,34 @@ DefaultHeaders = {
     'Accept': '*/*',
     'Accept-Encoding': 'gzip,deflate,sdch',
     'Accept-Language': 'zh-CN,zh;q=0.8',
-    'Accept-Charset': 'GBK,utf-8;q=0.7,*;q=0.3',
 }
 
 
 class BYS(object):
     def __init__(self, access_token, **kwargs):
-        self.access_token = access_token
-        self.session = requests.Session()
+        self.__access_token = access_token
+        self.__session = requests.Session()
         self.sslverify = False
         if 'headers' in kwargs:
-            self.headers = kwargs['header']
+            self.__headers = kwargs['header']
         else:
-            self.headers = DefaultHeaders
+            self.__headers = DefaultHeaders
+        self.__request('get', "https://www.baidu.com", token=False)
 
-    def _request(self, method, url, data=None, token=True, **kwargs):
+    def __request(self, method, url, data=None, token=True, **kwargs):
         kwnew = kwargs.copy()
         if 'headers' not in kwnew:  #add headers
-            kwnew['headers'] = self.headers
+            kwnew['headers'] = self.__headers
         if token:
             if 'params' not in kwnew:  #add access_token
                 kwnew['params'] = {}
             if 'access_token' not in kwnew['params']:
-                kwnew['params']['access_token'] = self.access_token
+                kwnew['params']['access_token'] = self.__access_token
 
         if method == 'get':
-            return self.session.get(url, verify=False, **kwnew)
+            return self.__session.get(url, verify=self.sslverify, **kwnew)
         elif method == 'post':
-            return self.session.post(url, data=data, verify=False, **kwnew)
+            return self.__session.post(url, data=data, verify=self.sslverify, **kwnew)
 
     def meta(self, path):
         url = PcsUrl + 'file'
@@ -48,8 +48,8 @@ class BYS(object):
             'method': 'meta',
             'path': path
         }
-        response = self._request('get',url, params=params)
-        return json.loads(response.content.decode("utf-8"))
+        response = self.__request('get', url, params=params)
+        return json.loads(response.text)
 
     def share(self, paths, pwd=None):
         """分享文件
@@ -72,14 +72,14 @@ class BYS(object):
         """
         url = ShareUrl + 'set'
         fid_list = []
-        try:
-            for path in paths:
+        for path in paths:
+            try:
                 response = self.meta(path)
                 #print(response)
                 pid = response['list'][0]['fs_id']
                 fid_list.append(pid)
-        except KeyError:
-            print("Error: sharing file: %s, errno: %s, error_msg: %s" % (path, response['error_code'],response['error_msg']))
+            except KeyError:
+                print("Error: sharing file: %s, errno: %s, error_msg: %s" % (path, response['error_code'], response['error_msg']))
         #print(fid_list)
         if pwd:
             data = {
@@ -94,8 +94,8 @@ class BYS(object):
                 'schannel': 0,
                 'channel_list': '[]'
             }
-        response = self._request('post', url, data=data)
-        return json.loads(response.content.decode("utf-8"))
+        response = self.__request('post', url, data=data)
+        return json.loads(response.text)
 
     def list_share(self):
         """列出所有分享
@@ -117,8 +117,8 @@ class BYS(object):
             }
         """
         url = ShareUrl + 'record'
-        response = self._request('get', url)
-        return json.loads(response.content.decode("utf-8"))
+        response = self.__request('get', url)
+        return json.loads(response.text)
 
     def cancel_share(self, shareids):
         """删除一个分享
@@ -135,8 +135,8 @@ class BYS(object):
         """
         url = ShareUrl + 'cancel'
         data = {'shareid_list': json.dumps(shareids)}
-        response = self._request('post', url, data=data)
-        return json.loads(response.content.decode("utf-8"))
+        response = self.__request('post', url, data=data)
+        return json.loads(response.text)
 
     def save_share(self, url, passwd):
         #TODO:save shared files from url
