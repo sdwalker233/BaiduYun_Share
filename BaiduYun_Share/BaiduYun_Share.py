@@ -1,8 +1,10 @@
+import bypy
 import requests
 import json
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+AppPcsPath = bypy.const.AppPcsPath
 ShareUrl = 'https://pan.baidu.com/share/'
 PcsUrl = 'https://d.pcs.baidu.com/rest/2.0/pcs/'
 #UserAgent = None
@@ -42,11 +44,20 @@ class BYS(object):
         elif method == 'post':
             return self.__session.post(url, data=data, verify=self.sslverify, **kwnew)
 
+    def __get_path(self, path):
+
+        if str(path).startswith(AppPcsPath):
+            return path
+        elif path.startswith('/'):
+            return AppPcsPath + path
+        else:
+            return AppPcsPath + '/' + path
+
     def meta(self, path):
         url = PcsUrl + 'file'
         params = {
             'method': 'meta',
-            'path': path
+            'path': self.__get_path(path)
         }
         response = self.__request('get', url, params=params)
         return json.loads(response.text)
