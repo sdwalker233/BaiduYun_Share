@@ -13,7 +13,6 @@ DefaultHeaders = {
     'Accept': '*/*',
     'Accept-Encoding': 'gzip,deflate,sdch',
     'Accept-Language': 'zh-CN,zh;q=0.8',
-    'Accept-Charset': 'GBK,utf-8;q=0.7,*;q=0.3',
 }
 
 
@@ -26,6 +25,7 @@ class BYS(object):
             self.headers = kwargs['header']
         else:
             self.headers = DefaultHeaders
+        self._request('get', "https://www.baidu.com", token=False)
 
     def _request(self, method, url, data=None, token=True, **kwargs):
         kwnew = kwargs.copy()
@@ -38,9 +38,9 @@ class BYS(object):
                 kwnew['params']['access_token'] = self.access_token
 
         if method == 'get':
-            return self.session.get(url, verify=False, **kwnew)
+            return self.session.get(url, verify=self.sslverify, **kwnew)
         elif method == 'post':
-            return self.session.post(url, data=data, verify=False, **kwnew)
+            return self.session.post(url, data=data, verify=self.sslverify, **kwnew)
 
     def meta(self, path):
         url = PcsUrl + 'file'
@@ -72,14 +72,14 @@ class BYS(object):
         """
         url = ShareUrl + 'set'
         fid_list = []
-        try:
-            for path in paths:
+        for path in paths:
+            try:
                 response = self.meta(path)
                 #print(response)
                 pid = response['list'][0]['fs_id']
                 fid_list.append(pid)
-        except KeyError:
-            print("Error: sharing file: %s, errno: %s, error_msg: %s" % (path, response['error_code'],response['error_msg']))
+            except KeyError:
+                print("Error: sharing file: %s, errno: %s, error_msg: %s" % (path, response['error_code'],response['error_msg']))
         #print(fid_list)
         if pwd:
             data = {
