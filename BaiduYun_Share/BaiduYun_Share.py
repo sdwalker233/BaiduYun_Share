@@ -1,6 +1,7 @@
 import bypy
 import requests
 import json
+import re
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -28,6 +29,11 @@ class BYS(object):
         else:
             self.__headers = DefaultHeaders
         self.__request('get', "https://www.baidu.com", token=False)
+        self.__token = self.__get_token()
+        print(self.__token)
+
+    def request(self, method, url, data=None, token=True, **kwargs):
+        return self.__request(method, url, data, token, **kwargs)
 
     def __request(self, method, url, data=None, token=True, **kwargs):
         kwnew = kwargs.copy()
@@ -43,6 +49,11 @@ class BYS(object):
             return self.__session.get(url, verify=self.sslverify, **kwnew)
         elif method == 'post':
             return self.__session.post(url, data=data, verify=self.sslverify, **kwnew)
+
+    def __get_token(self):
+        response = self.__request('get', 'https://passport.baidu.com/v2/api/?getapi&apiver=v3', token=False)
+        j = json.loads(response.text.replace('\'', '\"'))
+        return j['data']['token']
 
     def __get_path(self, path):
 
@@ -149,6 +160,40 @@ class BYS(object):
         response = self.__request('post', url, data=data)
         return json.loads(response.text)
 
-    def save_share(self, url, passwd):
-        #TODO:save shared files from url
-        pass
+    def save_share(self, url, path, passwd=None):
+        # ***失败了，暂时找不到不登录就能够保存分享的方法***
+        
+        """保存一个分享
+        :param url: 分享链接
+        :type url: str
+        :param path: 保存至自己网盘的目录
+        :type path: str
+        :param passwd: 分享密码
+        :type passwd: str
+        """
+        response = self.__request('get', url, token=False)
+        response = self.__request('get', response.url, token=False)
+        pattern = re.compile(r"var _context =(.*);")
+        m = pattern.search(response.text)
+        j = json.loads(m.group(1))
+        shareid = j['shareid']
+        uk = j['uk']
+        files = j['file_list']['list']
+        filelist = []
+        for file in files:
+            filelist.append(file['path'])
+        print(shareid, uk)
+        print(filelist)
+
+        url = ShareUrl + 'transfer'
+        params = {
+            'shareid': shareid,
+            'from': uk,
+            'bdstoken': self.__token
+        }
+        data = {
+            'filelist': json.dumps(filelist),
+            'path': path
+        }
+        response = self.__request('post', url, data=data, params=params)
+        return response
